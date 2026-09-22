@@ -1,40 +1,11 @@
-import os
-from dotenv import load_dotenv
-
-from sqlalchemy import create_engine, String, Integer, DateTime, update
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
-
-
-from datetime import datetime, timezone
+from sqlalchemy import update
 
 import qrcode
 import qrcode.image.svg
 from qrcode import constants
 
-load_dotenv()
-
-db_URL = os.getenv("DATABASE_URL")
-if db_URL is None:
-    raise RuntimeError("DATABASE_URL environment variable is not set")
-
-engine = create_engine(db_URL)
-SessionLocal = sessionmaker(bind=engine)
-
-class Base(DeclarativeBase):
-    pass
-
-class QRCode(Base):
-    __tablename__ = "qr_codes"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    url: Mapped[str] = mapped_column(String, nullable=False, unique=True)
-    company: Mapped[str] = mapped_column(String, nullable=False)
-    visits: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    #svg_path: Mapped[str] = mapped_column(String, nullable=False)
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-
-def get_db():
-    with SessionLocal() as db:
-        yield db
+from database import SessionLocal
+from tables import QRCode
 
 def store_qr_code_in_db(url:str, company: str):
     with SessionLocal() as db:
