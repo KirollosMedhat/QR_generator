@@ -1,5 +1,5 @@
 from sqlalchemy import update
-
+from sqlalchemy.exc import IntegrityError
 import qrcode
 import qrcode.image.svg
 from qrcode import constants
@@ -11,14 +11,22 @@ def store_qr_code_in_db(url:str, company: str):
     with SessionLocal() as db:
         existing = db.query(QRCode).filter(QRCode.url == url).first()
         if existing:
-            print(f"\nexisint id: {existing.id}")
+            #print(f"\nexisting id: {existing.id}")                      #For testing purposes.
             return existing.id
         
         new_qr = QRCode(url = url, company = company)
         db.add(new_qr)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            existing = db.query(QRCode).filter(QRCode.url == url).first()
+            if existing:
+                return existing.id
+            else:
+                raise
         db.refresh(new_qr)
-        print(f"\nCreated a new entry with id: {new_qr.id}")
+        #print(f"\nCreated a new entry with id: {new_qr.id}")           #For testing purposes.
         return new_qr.id
 
 def _build_qr_image(base_url:str, id:int):
@@ -26,13 +34,13 @@ def _build_qr_image(base_url:str, id:int):
     qr.add_data(f"{base_url}/qrcode/{id}/visit")
     img = qr.make_image()
     #img.save("testing.svg") # type: ignore[arg-type]
-    print("\nGenerating the image.")
+    #print("\nGenerating the image.")                                   #For testing purposes.
     return img
 
 def gen_new_QRCode(base_url:str, url: str, company:str):
     id = store_qr_code_in_db(url, company)
-    print("\ngen_new_QRCode here")
-    return id, _build_qr_image(base_url, id)                                  #yet to decide how we will handle img.
+    #print("\ngen_new_QRCode here")                                     #For testing purposes.
+    return id, _build_qr_image(base_url, id)                            #yet to decide how we will handle img.
 
     # img.save("vector_code.svg")
     # print("inside gen qrcode")
@@ -43,10 +51,8 @@ def gen_from_id(base_url:str, qr_id: int):
         if not existing:
             print("Returing None, no matching id")
             return None
-        print("\ngen_from_id here")
+        #print("\ngen_from_id here")                                     #For testing purposes.
         return _build_qr_image(base_url, existing.id)
-
-
 
 # def increment_visit(qr_id: int):
 #     with SessionLocal() as db:
@@ -60,7 +66,7 @@ def gen_from_id(base_url:str, qr_id: int):
 #         return existing.url
 
 
-# better version than the above.
+# Better version than the above (atomic writing to db).
 def increment_visit(qr_id: int):
     with SessionLocal() as db:
         result = db.execute(
