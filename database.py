@@ -16,6 +16,6 @@ SessionLocal = sessionmaker(bind=engine)
 class Base(DeclarativeBase):
     pass
 
-def get_db():
+def get_db():                       #Not Used anywhere.
     with SessionLocal() as db:
         yield db
