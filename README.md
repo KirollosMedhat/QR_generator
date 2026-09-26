@@ -100,4 +100,4 @@ The URL actually encoded inside the QR image. Increments the record's visit coun
 - No authentication — anyone with network access to this service can create QR codes or view visit counts.
 - `company` has no format or length validation.
 - Database sessions are managed manually inside each service function rather than via FastAPI's dependency injection (`Depends`) — a planned refactor once shared transactions across multiple operations are needed.
-- Currently synchronous (not `async`) — a deliberate choice given expected traffic is low; revisit if that changes.
+- Currently synchronous (not `async`) — a deliberate choice given expected traffic is low.
